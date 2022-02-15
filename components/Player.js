@@ -1,5 +1,5 @@
 import { useSession } from 'next-auth/react'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useRecoilState } from 'recoil'
 import useSpotify from '../hooks/useSpotify'
 import useSongInfo from '../hooks/useSongInfo'
@@ -14,6 +14,8 @@ import {
   RewindIcon,
   PauseIcon,
 } from '@heroicons/react/solid'
+import { debounce } from 'lodash'
+
 function Player() {
   const spotifyApi = useSpotify()
   const { data: session, status } = useSession()
@@ -29,7 +31,7 @@ function Player() {
   const fetchCurrentSong = () => {
     if (!songInfo) {
       spotifyApi.getMyCurrentPlayingTrack().then((data) => {
-        setCurrentTrackId(data.body.item.id)
+        setCurrentTrackId(data.body?.item?.id)
         spotifyApi.getMyCurrentPlaybackState().then((data) => {
           setIsPlaying(data.body?.is_playing)
         })
@@ -56,6 +58,21 @@ function Player() {
       setVolume(50)
     }
   }, [currentTrackId, spotifyApi, session])
+
+  //Function to  set the volume
+  const debouncedAdjustVolume = useCallback(
+    debounce((volume) => {
+      spotifyApi.setVolume(volume).catch((err) => {})
+    }, 300),
+    []
+  )
+
+  //Useeffect to set the volume
+  useEffect(() => {
+    if (volume > 0 && volume < 100) {
+      debouncedAdjustVolume(volume)
+    }
+  }, [volume])
 
   return (
     <div className="grid h-24 grid-cols-3 bg-gradient-to-b from-black to-gray-900 px-2 text-xs text-white md:px-8 md:text-base ">
@@ -91,7 +108,24 @@ function Player() {
       </div>
 
       {/* Right */}
-      <div></div>
+      <div className="flex items-center justify-end space-x-3 pr-5 md:space-x-4">
+        <VolumeDown
+          className="button"
+          onClick={() => volume > 0 && setVolume(volume - 10)}
+        />
+        <input
+          type="range"
+          value={volume}
+          onChange={(e) => setVolume(Number(e.target.value))}
+          min={0}
+          max={100}
+          className="w-14 md:w-28"
+        />
+        <VolumeUpIcon
+          className="button"
+          onClick={() => volume < 100 && setVolume(volume + 10)}
+        />
+      </div>
     </div>
   )
 }
