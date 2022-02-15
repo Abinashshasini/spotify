@@ -4,7 +4,16 @@ import { useRecoilState } from 'recoil'
 import useSpotify from '../hooks/useSpotify'
 import useSongInfo from '../hooks/useSongInfo'
 import { currentTrackIdState, isPlayingState } from '../atom/SongAtom'
-
+import { HeartIcon, VolumeUpIcon as VolumeDown } from '@heroicons/react/outline'
+import {
+  SwitchHorizontalIcon,
+  FastForwardIcon,
+  PlayIcon,
+  VolumeUpIcon,
+  ReplyIcon,
+  RewindIcon,
+  PauseIcon,
+} from '@heroicons/react/solid'
 function Player() {
   const spotifyApi = useSpotify()
   const { data: session, status } = useSession()
@@ -16,6 +25,7 @@ function Player() {
 
   const songInfo = useSongInfo()
 
+  //Function to fetch users curent playing
   const fetchCurrentSong = () => {
     if (!songInfo) {
       spotifyApi.getMyCurrentPlayingTrack().then((data) => {
@@ -25,6 +35,19 @@ function Player() {
         })
       })
     }
+  }
+
+  //Function to play and pause
+  const handlePlayPause = () => {
+    spotifyApi.getMyCurrentPlaybackState().then((data) => {
+      if (data.body.is_playing) {
+        spotifyApi.pause()
+        setIsPlaying(false)
+      } else {
+        spotifyApi.play()
+        setIsPlaying(true)
+      }
+    })
   }
 
   useEffect(() => {
@@ -48,6 +71,27 @@ function Player() {
           <p>{songInfo?.artists?.[0]?.name}</p>
         </div>
       </div>
+      {/* Center */}
+      <div className="flex items-center justify-evenly">
+        <SwitchHorizontalIcon className="button" />
+        <RewindIcon
+          className="button"
+          //   onClick={() => spotifyApi.skipToPrevious()} API problem
+        />
+        {isPlaying ? (
+          <PauseIcon className="button h-10 w-10" onClick={handlePlayPause} />
+        ) : (
+          <PlayIcon className="button h-10 w-10" onClick={handlePlayPause} />
+        )}
+        <FastForwardIcon
+          className="button"
+          //   onClick={() => spotifyApi.skipToNext()} API problem
+        />
+        <ReplyIcon className="button" />
+      </div>
+
+      {/* Right */}
+      <div></div>
     </div>
   )
 }
